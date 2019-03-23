@@ -50,14 +50,14 @@ class Tool(object):
         InputPoint = arcpy.Parameter(
             displayName="InputPoint",
 		    name="InputPoint",
-		    datatype="DEFeatureClass",
+		    datatype="GPFeatureRecordSetLayer",
 		    parameterType="Required",
 		    direction="Input")
 
         OutputFC = arcpy.Parameter(
             displayName="OutputFC",
 		    name="OutputFC",
-		    datatype="DEFeatureClass",
+		    datatype="GPFeatureRecordSetLayer",
 		    parameterType="Required",
 		    direction="Output")
 
@@ -69,9 +69,14 @@ class Tool(object):
         return True
 
     def updateParameters(self, parameters):
-        # Modify the values and properties of parameters before internal
-        # validation is performed.  This method is called whenever a parameter
-        # has been changed.
+        # Modify the values and properties of parameters before internal validation is performed.  
+        # This method is called whenever a parameter has been changed.
+        
+        # Set parameter schemas
+        parameters[1].schema.geometryTypeRule = "AsSpecified"
+        parameters[1].schema.geometryTypeRule = "AsSpecified"
+        parameters[2].schema.geometryType = "Point"
+        parameters[2].schema.geometryType = "Point"
         return
 
     def updateMessages(self, parameters):
