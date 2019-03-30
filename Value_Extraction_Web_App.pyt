@@ -11,8 +11,8 @@
 # This tool was developed in Visual Studio Code
 #
 # Purpose:
-# This tool will extract values of rasters in a folder and create a resulting feature 
-# class with a related table of temporal data. This service will be used in a web app
+# This tool will extract values of rasters in a folder and create a result that
+# can be utilized in Web App Builder and it's chart or related table chart widget
 #-----------------------------------------------------------------------------
 
 # Start script
@@ -34,7 +34,7 @@ class Toolbox(object):
 
 class Tool(object):
     def __init__(self):
-        """Define the tool (tool name is the name of the class)."""
+        #Define the tool (tool name is the name of the class)
         self.label = "Value Extraction Tool"
         self.description = ""
         self.canRunInBackground = False
@@ -50,17 +50,19 @@ class Tool(object):
         InputPoint = arcpy.Parameter(
             displayName="InputPoint",
 		    name="InputPoint",
-		    datatype="GPFeatureRecordSetLayer",
+		    datatype="DEFeatureClass",
 		    parameterType="Required",
 		    direction="Input")
 
         OutputFC = arcpy.Parameter(
             displayName="OutputFC",
 		    name="OutputFC",
-		    datatype="GPFeatureRecordSetLayer",
-		    parameterType="Required",
+		    datatype="DEFeatureClass",
+		    parameterType="Output",
 		    direction="Output")
 
+        OutputFC.parameterDependencies =[InputPoint.name]
+        OutputFC.schema.clone = True
         params = [DataSource, InputPoint, OutputFC]
         return params
 
@@ -71,12 +73,8 @@ class Tool(object):
     def updateParameters(self, parameters):
         # Modify the values and properties of parameters before internal validation is performed.  
         # This method is called whenever a parameter has been changed.
-        
-        # Set parameter schemas
-        parameters[1].schema.geometryTypeRule = "AsSpecified"
-        parameters[1].schema.geometryTypeRule = "AsSpecified"
-        parameters[2].schema.geometryType = "Point"
-        parameters[2].schema.geometryType = "Point"
+        # parameters[2].schema.geometryType = "Point"
+        # parameters[2].schema.geometryTypeRule = "As Specified"
         return
 
     def updateMessages(self, parameters):
@@ -86,21 +84,24 @@ class Tool(object):
 
     def execute(self, parameters, messages):
         arcpy.env.overwriteOutput = True
+        OutputSRS = arcpy.SpatialReference(4326)
 
         # User input arguments
         DataSource = parameters[0].valueAsText
         InputPoint = parameters[1].valueAsText
         OutputFC = parameters[2].valueAsText 
 
-        # Handle all input point procesing
-        arcpy.CopyFeatures_management(InputPoint, OutputFC)
+        # Create a temporary FC to hold reprojected input data
+        #TempFC = os.path.join(arcpy.env.scratchWorkspace, "TempFC")
+        #arcpy.Project_management(InputPoint, TempFC, 4326)
         
-        # Add fields to hold temporal data
+        # Create the output feature class and add some fields
+        arcpy.CreateFeatureclass_management(os.path.dirname(OutputFC), os.path.basename(OutputFC), "POINT", "", "DISABLED", "DISABLED", 4326)
         arcpy.AddField_management(OutputFC, "LABEL", "TEXT")
         arcpy.AddField_management(OutputFC, "VALUE", "SHORT")
 
         # Loop through geometry attributes and get the x and y
-        with arcpy.da.SearchCursor(InputPoint,['SHAPE@X', 'SHAPE@Y']) as cursor:
+        with arcpy.da.SearchCursor(InputPoint,['SHAPE@X', 'SHAPE@Y'], spatial_reference = OutputSRS) as cursor:
             PointIndex = 1
             for row in cursor:
                 X = row[0]
@@ -127,4 +128,5 @@ class Tool(object):
                                 index += 1
 
                 PointIndex += 1
+        #arcpy.Delete_management(TempFC)
         return
